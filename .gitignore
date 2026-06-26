@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+.env
+*_out/
+*.pdbqt
+vina_pocket*.txt
+.streamlit/secrets.toml
+.DS_Store
