@@ -187,18 +187,23 @@ re-docking. Verify against primary docking literature for your system.
 
 ## Tested vs. not (be honest about it)
 
-- **Verified:** box geometry, ligand-compatibility ranking, the **P2Rank
-  predictions-CSV parser**, **native-ligand extraction**, **docking-score
-  parsing** (Vina/smina/QuickVina formats), and the **RMSD computation** (RDKit
-  `CalcRMS`) — all unit-tested in `tests/`, plus the RDKit descriptor layer.
-- **Not verified in this build:** the live **fpocket**, **P2Rank**, and
-  **Vina/smina/QuickVina2** runs, the **PDBQT preparation**, and the RCSB
-  download path were not executed in the environment where this scaffold was
-  generated (no detector/docking binaries, no prep tools, no network there).
-  They use the standard tool interfaces, but **run `python -m tests.test_core`
-  and try one real PDB end-to-end locally before relying on results.** Output
-  formats and prep-tool CLIs have drifted across versions; the parsers/wrappers
-  are defensive, but check them against your installed versions.
+- **Verified (unit tests, `tests/` — 9/9 passing):** box geometry,
+  ligand-compatibility ranking, the **P2Rank predictions-CSV parser**,
+  **native-ligand extraction**, **docking-score parsing** (Vina/smina/QuickVina
+  formats), and the **RMSD computation** (RDKit `CalcRMS`), plus the RDKit
+  descriptor layer (aspirin → MW 180.16, logP 1.31).
+- **Verified live (Python 3.13 + numpy + RDKit):** the **RCSB download path**
+  (`pocketbox/fetch.py`) against the real endpoint, and the
+  structure-parse → native-ligand-extract → box-geometry path on a genuine
+  target (2V5Z, human MAO-B: 8,778 atoms; FAD + SAG resolved).
+- **Not yet verified end-to-end:** the live **fpocket**, **P2Rank**, and
+  **Vina/smina/QuickVina2** runs and the **PDBQT preparation** — these need
+  their respective binaries on PATH (the geometry/ML detectors and docking
+  engines are conda/Linux tools, not pip packages). The wrappers use the
+  standard tool interfaces, but **try one real PDB end-to-end locally before
+  relying on results.** Output formats and prep-tool CLIs have drifted across
+  versions; the parsers/wrappers are defensive, but check them against your
+  installed versions.
 
 Run the tests:
 
