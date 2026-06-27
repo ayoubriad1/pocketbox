@@ -188,26 +188,36 @@ if "ranked" in st.session_state:
 
     # box
     box = compute_box(pocket.points_for_box(), buffer=buffer, cubic=cubic)
+    pocket_pts = pocket.points_for_box()[:400]
+    cfg = write_vina_config(box, exhaustiveness=exhaust)
 
-    left, right = st.columns([3, 2])
-    with left:
-        st.markdown("**3D view** — protein, pocket cavity (orange), box (magenta)")
-        try:
-            from stmol import showmol
-            from pocketbox.visualize import build_view
-            view = build_view(pdb_text, box=box,
-                              pocket_atom_coords=pocket.points_for_box()[:400])
-            showmol(view, height=520, width=720)
-        except Exception as e:
-            st.info(f"Viewer unavailable ({e}). Box params are still below.")
+    st.markdown(
+        f"**3D views** — the magenta grid box is locked to pocket "
+        f"**{pocket.id}**; rotate either view and it stays on the active site.")
+    cart_col, surf_col = st.columns(2)
+    try:
+        from stmol import showmol
+        from pocketbox.visualize import build_view, build_surface_view
+        with cart_col:
+            st.caption("Cartoon · pocket cavity (orange) · box (magenta)")
+            showmol(build_view(pdb_text, box=box, pocket_atom_coords=pocket_pts),
+                    height=470, width=400)
+        with surf_col:
+            st.caption("Surface · see the cavity · box marks the pocket")
+            showmol(build_surface_view(pdb_text, box=box,
+                                       pocket_atom_coords=pocket_pts),
+                    height=470, width=400)
+    except Exception as e:
+        st.info(f"3D viewer unavailable ({e}). Box params are still below.")
 
-    with right:
-        st.markdown("**Docking box (AutoDock Vina)**")
+    st.markdown(f"**Docking box (AutoDock Vina)** — pocket {pocket.id}")
+    bcol1, bcol2 = st.columns([2, 3])
+    with bcol1:
         st.json(box.as_dict())
-        cfg = write_vina_config(box, exhaustiveness=exhaust)
         st.download_button("⬇ Download vina config", cfg,
                            file_name=f"vina_pocket{pocket.id}.txt",
                            use_container_width=True)
+    with bcol2:
         st.code(cfg, language="ini")
 
     st.markdown("---")

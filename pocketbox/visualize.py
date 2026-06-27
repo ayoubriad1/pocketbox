@@ -48,8 +48,62 @@ def build_view(pdb_text: str,
             "center": {"x": cx, "y": cy, "z": cz},
             "dimensions": {"w": sx, "h": sy, "d": sz},
             "color": "magenta",
-            "opacity": 0.18,
+            "opacity": 0.9,
             "wireframe": True,
+            "linewidth": 2.0,
+        })
+
+    view.zoomTo()
+    return view
+
+
+def build_surface_view(pdb_text: str,
+                       box: Box | None = None,
+                       pocket_atom_coords=None,
+                       width: int = 800,
+                       height: int = 520,
+                       surface_opacity: float = 0.5,
+                       surface_color: str = "white"):
+    """Render the protein as a translucent molecular surface so the pocket
+    cavity is visible, with the docking box drawn at the pocket.
+
+    The box is added in the model's own coordinate frame, so it stays locked
+    to the active site when the view is rotated (protein and box rotate as one).
+
+    pdb_text          : the full PDB file as a string.
+    box               : Box to draw as a wireframe at the pocket (optional).
+    pocket_atom_coords: iterable of (x,y,z) marking the pocket, shown as
+                        translucent spheres to locate the cavity on the surface.
+    """
+    try:
+        import py3Dmol
+    except ImportError as e:                                    # pragma: no cover
+        raise ImportError(
+            "py3Dmol is required for visualization (`pip install py3Dmol`).") from e
+
+    view = py3Dmol.view(width=width, height=height)
+    view.addModel(pdb_text, "pdb")
+    # faint cartoon underneath gives structural context through the surface.
+    view.setStyle({"cartoon": {"color": "spectrum"}})
+    # translucent van-der-Waals surface over the whole protein -> reveals cavity.
+    surftype = getattr(py3Dmol, "VDW", 1)
+    view.addSurface(surftype, {"opacity": surface_opacity, "color": surface_color})
+
+    if pocket_atom_coords is not None:
+        for (x, y, z) in pocket_atom_coords:
+            view.addSphere({"center": {"x": float(x), "y": float(y), "z": float(z)},
+                            "radius": 1.2, "color": "orange", "opacity": 0.9})
+
+    if box is not None:
+        cx, cy, cz = box.center
+        sx, sy, sz = box.size
+        view.addBox({
+            "center": {"x": cx, "y": cy, "z": cz},
+            "dimensions": {"w": sx, "h": sy, "d": sz},
+            "color": "magenta",
+            "opacity": 0.95,
+            "wireframe": True,
+            "linewidth": 2.5,
         })
 
     view.zoomTo()
