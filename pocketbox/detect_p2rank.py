@@ -35,7 +35,8 @@ def p2rank_available() -> bool:
 
 
 def run_p2rank(pdb_path: str, out_dir: str | None = None) -> str:
-    if not p2rank_available():
+    launcher = shutil.which("prank")
+    if launcher is None:
         raise RuntimeError(
             "P2Rank not found on PATH (command `prank`). Install via "
             "`conda install -c bioconda p2rank` (needs Java), or download the "
@@ -44,8 +45,13 @@ def run_p2rank(pdb_path: str, out_dir: str | None = None) -> str:
     if out_dir is None:
         out_dir = os.path.splitext(pdb_path)[0] + "_p2rank"
     os.makedirs(out_dir, exist_ok=True)
-    subprocess.run(["prank", "predict", "-f", pdb_path, "-o", out_dir],
-                   check=True, capture_output=True, text=True)
+    cmd = [launcher, "predict", "-f", pdb_path, "-o", out_dir]
+    # On Windows the P2Rank launcher is `prank.bat`; CreateProcess can't execute
+    # a .bat/.cmd by bare name, so route it through the command interpreter.
+    # (The standalone `prank.bat` also requires JAVA_HOME to be set.)
+    if os.name == "nt" and launcher.lower().endswith((".bat", ".cmd")):
+        cmd = ["cmd", "/c", *cmd]
+    subprocess.run(cmd, check=True, capture_output=True, text=True)
     return out_dir
 
 
