@@ -10,6 +10,11 @@ Vina config — center `(x, y, z)` and size `(x, y, z)` included.
 It runs as a Streamlit web app and as a command-line tool, and ships with a
 Docker build so you can host a public demo.
 
+![PocketBox on 2V5Z: top-ranked MAO-B pocket and its AutoDock Vina box](assets/hero.png)
+
+<sub>Top-ranked pocket and docking box for human MAO-B (PDB `2V5Z`), produced by
+the P2Rank backend + the ranking and box code in this repo — not a mock-up.</sub>
+
 ---
 
 ## What it does — and what it does *not*
@@ -38,6 +43,27 @@ binding site.
 The scoring is fully transparent — every term's contribution and a plain-text
 reason are shown for each pocket — so it can be described honestly in a methods
 section.
+
+---
+
+## Example: human MAO-B (`2V5Z`)
+
+```bash
+python cli.py --pdb-file 2V5Z.pdb --ligand-class maob_inhibitor --backend p2rank --top 3
+```
+
+```
+Top 3 pockets for 'MAO-B inhibitor':
+
+#1  pocket 2  match=0.7966  druggability=0.974   center=(53.862, 147.205, 20.719)  size=(27.606, 30.0, 30.0)
+#2  pocket 1  match=0.7862  druggability=0.978   center=(24.593, 127.294, 17.084)  size=(30.0, 26.196, 30.0)
+#3  pocket 3  match=0.6597  druggability=0.769   center=(46.977, 160.206, 39.94)   size=(30.0, 30.0, 30.0)
+```
+
+The top three candidate pockets, coloured by rank, each with the docking box
+PocketBox would export:
+
+![Top-3 ranked pockets on 2V5Z, coloured by rank](assets/ranked.png)
 
 ---
 
@@ -147,15 +173,16 @@ reliable one:
 
 ## How it works
 
-```
-PDB id / file
-   → fetch & read structure        (pocketbox/fetch.py)
-   → detect pockets               (pocketbox/detect.py · detect_p2rank.py)  fpocket OR P2Rank
-   → describe each pocket          (pocketbox/descriptors.py)  hydrophobicity, charge, metals…
-   → rank vs ligand profile        (pocketbox/match.py)    transparent weighted score + reasons
-   → compute Vina box              (pocketbox/box.py)      center (x,y,z) + size (x,y,z)
-   → 3D view  (py3Dmol / stmol)    (pocketbox/visualize.py)
-   → export Vina config + receptor-prep instructions
+```mermaid
+flowchart TD
+    A["PDB id / file"] --> B["Fetch and read structure<br/><code>fetch.py</code> · <code>structure.py</code>"]
+    B --> C["Detect pockets<br/>fpocket OR P2Rank<br/><code>detect.py</code> · <code>detect_p2rank.py</code>"]
+    C --> D["Describe each pocket<br/>hydrophobicity, charge, metals<br/><code>descriptors.py</code>"]
+    L["Ligand: class or SMILES<br/>RDKit descriptors<br/><code>ligand.py</code>"] --> E
+    D --> E["Rank vs ligand profile<br/>transparent weighted score + reasons<br/><code>match.py</code>"]
+    E --> F["Compute Vina box<br/>center (x,y,z) + size (x,y,z)<br/><code>box.py</code>"]
+    F --> G["3D view<br/>py3Dmol / stmol<br/><code>visualize.py</code>"]
+    F --> H["Export Vina config<br/>+ receptor-prep instructions"]
 ```
 
 Ligand descriptors (MW, logP, H-bond donors/acceptors, charge, aromatic rings,
