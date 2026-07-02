@@ -15,7 +15,7 @@ from pocketbox.ligand import (LIGAND_CLASSES, get_profile,
                               compute_ligand_descriptors,
                               profile_from_descriptors)
 
-st.set_page_config(page_title="PocketBox", page_icon="🧬", layout="wide")
+st.set_page_config(page_title="PocketBox", layout="wide")
 
 # --------------------------------------------------------------------------- #
 # Sidebar: honest framing
@@ -35,7 +35,7 @@ with st.sidebar:
         "Detection uses **fpocket** (must be installed & on PATH). "
         "Ligand descriptors use **RDKit**. Viewer uses **py3Dmol/stmol**.")
 
-st.title("🧬 PocketBox")
+st.title("PocketBox")
 st.caption("Ligand-aware pocket triage + docking-box export")
 
 # --------------------------------------------------------------------------- #
@@ -214,7 +214,7 @@ if "ranked" in st.session_state:
     bcol1, bcol2 = st.columns([2, 3])
     with bcol1:
         st.json(box.as_dict())
-        st.download_button("⬇ Download vina config", cfg,
+        st.download_button("Download vina config", cfg,
                            file_name=f"vina_pocket{pocket.id}.txt",
                            use_container_width=True)
     with bcol2:

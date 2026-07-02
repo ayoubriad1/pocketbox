@@ -13,7 +13,7 @@ Example
 
 Requires (at runtime, on your machine): a prep tool (ADFR `prepare_receptor`/
 `prepare_ligand` or Open Babel), the chosen docking engine(s), and Open Babel
-for the RMSD conversion. None of these run in the scaffold-generation sandbox.
+for the RMSD conversion. Install these locally before running.
 """
 
 from __future__ import annotations

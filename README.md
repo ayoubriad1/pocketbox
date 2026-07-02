@@ -1,4 +1,4 @@
-# 🧬 PocketBox
+# PocketBox
 
 **Ligand-aware binding-pocket triage + AutoDock Vina docking-box export.**
 
@@ -12,7 +12,7 @@ Docker build so you can host a public demo.
 
 ---
 
-## ⚠️ What it does — and what it does *not*
+## What it does — and what it does *not*
 
 Three things here are well-posed and reliable:
 

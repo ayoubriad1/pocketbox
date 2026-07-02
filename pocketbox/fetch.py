@@ -1,8 +1,7 @@
 """Fetch a structure by PDB id from RCSB.
 
 Uses the standard RCSB download endpoint. Verify the URL/terms if RCSB changes
-its service. Requires network access at runtime (not available in some
-sandboxes, but fine on a normal machine / Streamlit host).
+its service. Requires network access at runtime.
 """
 
 from __future__ import annotations

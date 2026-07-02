@@ -11,10 +11,10 @@ pose. A symmetry-corrected, NON-superimposed RMSD (RDKit `CalcRMS`) of ≲ 2 A i
 the usual sanity threshold; superimposing RMSD would hide a misplaced pose, so
 it is deliberately not used.
 
-IMPORTANT: the subprocess docking calls and the PDBQT preparation are NOT run in
-the environment where this file was generated. The pieces that ARE unit-tested
-are: native-ligand extraction, score parsing, and the RMSD computation. Validate
-the full loop on your own machine before trusting it.
+IMPORTANT: the subprocess docking calls and the PDBQT preparation require the
+external binaries above and are not covered by the unit tests. The pieces that
+ARE unit-tested are: native-ligand extraction, score parsing, and the RMSD
+computation. Validate the full loop on your own machine before trusting it.
 """
 
 from __future__ import annotations

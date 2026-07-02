@@ -5,9 +5,9 @@ of common routes and raises a clear, actionable error if none are present.
 Order tried: AutoDockTools / ADFR (`prepare_receptor`, `prepare_ligand`) first,
 then Open Babel (`obabel`) as a portable fallback.
 
-NONE of this is exercised in the environment where this file was generated
-(no prep tools installed there), so treat it as a starting point and check the
-output PDBQT on your own machine.
+This path depends on the external prep tools above and is not covered by the
+unit tests, so treat it as a starting point and check the output PDBQT on your
+own machine.
 """
 
 from __future__ import annotations
