@@ -396,8 +396,8 @@ if "ranked" in st.session_state:
     st.markdown(
         f"The docking box is locked to pocket **{pocket.id}** — rotate a view "
         "and it stays on the active site. Its walls are coloured by dimension: "
-        "**X red · Y green · Z blue** (opposite walls share a colour), and kept "
-        "translucent so the protein shows through.")
+        "**X red · Y green · Z blue** (opposite walls share a colour), with a "
+        "bold outline and a slight transparency.")
     t_cart, t_surf, t_cfg = st.tabs(
         ["Cartoon view", "Surface view", "Vina config"])
     try:
