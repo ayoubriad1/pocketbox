@@ -9,11 +9,11 @@ channels:
 dependencies:
   - python=3.11
   - fpocket
-  - p2rank          # optional second detector (Java-based); pulls openjdk
-  - openjdk
   - rdkit
   - numpy
   - pip
+  # P2Rank (optional second detector) is not a conda package; if you want it,
+  # install a JRE and drop the standalone P2Rank distribution on PATH.
   - pip:
       - streamlit>=1.30
       - py3Dmol>=2.0
