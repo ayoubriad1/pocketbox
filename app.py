@@ -91,8 +91,72 @@ _html(
       .pb-b1 { background:#f0a500; } .pb-b2 { background:#9aa0ad; }
       .pb-b3 { background:#c07b3a; } .pb-bn { background:#c7c4dd; color:#37344a; }
       .pb-foot { color:#8b88a6; font-size:0.85rem; margin-top:8px; }
+      /* clear theme: make surfaces transparent so the molecular canvas shows */
+      .stApp { background: transparent !important; }
+      [data-testid="stHeader"] { background: transparent !important; }
+      body { background:
+        radial-gradient(1100px 640px at 12% -8%, #eef0ff 0%,
+                        #f6f7ff 45%, #ffffff 82%) fixed; }
+      /* keep input/result cards opaque so text stays crisp over the canvas */
+      [data-testid="stVerticalBlockBorderWrapper"] {
+        background: rgba(255,255,255,0.82);
+        backdrop-filter: blur(3px); border-radius: 16px;
+      }
     </style>
     """
+)
+
+# Ambient molecular background: atoms drifting with bonds between near neighbours,
+# painted on a canvas behind the whole app (self-contained JS, no CDN needed).
+components.html(
+    """
+    <script>
+    (function () {
+      const doc = window.parent.document;
+      if (doc.getElementById('pb-bg')) return;              // guard against reruns
+      const c = doc.createElement('canvas'); c.id = 'pb-bg';
+      Object.assign(c.style, {position:'fixed', inset:'0', width:'100%',
+        height:'100%', zIndex:'-1', pointerEvents:'none', opacity:'0.55'});
+      doc.body.prepend(c);
+      const ctx = c.getContext('2d');
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const N = 72, LINK = 140;
+      let W, H, pts;
+      function reset() {
+        W = c.width = doc.body.clientWidth;
+        H = c.height = window.parent.innerHeight;
+        pts = Array.from({length: N}, () => ({
+          x: Math.random()*W, y: Math.random()*H,
+          vx: (Math.random()-0.5)*0.35, vy: (Math.random()-0.5)*0.35}));
+      }
+      function frame() {
+        ctx.clearRect(0, 0, W, H);
+        for (const p of pts) {
+          if (!reduce) { p.x += p.vx; p.y += p.vy; }
+          if (p.x < 0 || p.x > W) p.vx *= -1;
+          if (p.y < 0 || p.y > H) p.vy *= -1;
+        }
+        for (let i = 0; i < N; i++) for (let j = i+1; j < N; j++) {
+          const a = pts[i], b = pts[j];
+          const d = Math.hypot(a.x-b.x, a.y-b.y);
+          if (d < LINK) {
+            ctx.strokeStyle = 'rgba(109,94,252,' + (1 - d/LINK)*0.38 + ')';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+          }
+        }
+        for (const p of pts) {
+          ctx.fillStyle = 'rgba(74,86,205,0.85)';
+          ctx.beginPath(); ctx.arc(p.x, p.y, 1.7, 0, 7); ctx.fill();
+        }
+        if (!reduce) requestAnimationFrame(frame);
+      }
+      window.parent.addEventListener('resize', reset);
+      reset(); frame();
+    })();
+    </script>
+    """,
+    height=0,
 )
 
 _LOGO = (
