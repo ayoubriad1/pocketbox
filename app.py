@@ -52,6 +52,16 @@ def _html(markup: str) -> None:
 _html(
     """
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+      html, body, .stApp, [data-testid="stAppViewContainer"], [class*="css"] {
+        font-family: 'IBM Plex Sans', system-ui, sans-serif;
+      }
+      h1, h2, h3, .pb-sec, .pb-hero h1 {
+        font-family: 'Space Grotesk', sans-serif !important;
+        letter-spacing: -0.02em;
+      }
+      .pb-step { font-family: 'IBM Plex Mono', monospace !important;
+        text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.74rem; }
       .block-container { padding-top: 2.2rem; max-width: 1150px; }
       /* hero */
       .pb-hero {
@@ -95,8 +105,8 @@ _html(
       .stApp { background: transparent !important; }
       [data-testid="stHeader"] { background: transparent !important; }
       body { background:
-        radial-gradient(1100px 640px at 12% -8%, #eef0ff 0%,
-                        #f6f7ff 45%, #ffffff 82%) fixed; }
+        radial-gradient(1200px 800px at 15% -10%, #eef0ff 0%,
+                        #f6f7fb 45%, #ffffff 100%) fixed; }
       /* solid white cards so the moving molecules never sit behind the text */
       [class*="st-key-pbcard"] {
         background: #ffffff !important;
@@ -118,47 +128,76 @@ components.html(
     """
     <script>
     (function () {
-      const doc = window.parent.document;
+      const doc = window.parent.document, win = window.parent;
       if (doc.getElementById('pb-bg')) return;              // guard against reruns
       const c = doc.createElement('canvas'); c.id = 'pb-bg';
       Object.assign(c.style, {position:'fixed', inset:'0', width:'100%',
-        height:'100%', zIndex:'-1', pointerEvents:'none', opacity:'0.55'});
+        height:'100%', zIndex:'-1', pointerEvents:'none', opacity:'0.9'});
       doc.body.prepend(c);
       const ctx = c.getContext('2d');
-      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const N = 72, LINK = 140;
-      let W, H, pts;
-      function reset() {
-        W = c.width = doc.body.clientWidth;
-        H = c.height = window.parent.innerHeight;
-        pts = Array.from({length: N}, () => ({
-          x: Math.random()*W, y: Math.random()*H,
-          vx: (Math.random()-0.5)*0.35, vy: (Math.random()-0.5)*0.35}));
+      const reduce = win.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const dpr = Math.min(win.devicePixelRatio || 1, 2);
+      // element table: CPK-ish colour, relative abundance (w), radius, valence
+      const EL = [
+        {s:'C', c:[123,122,145], w:46, r:2.0, val:3},
+        {s:'N', c:[74,107,214],  w:20, r:2.2, val:2},
+        {s:'O', c:[224,82,82],   w:20, r:2.2, val:2},
+        {s:'S', c:[216,167,46],  w:8,  r:2.6, val:2},
+        {s:'P', c:[224,123,46],  w:6,  r:2.6, val:2}
+      ];
+      const ACC = [109,94,252];                      // accent-tinted bonds
+      const N = 92, LINK = 185, SPEED = 0.20;
+      let W, H, atoms;
+      function pick(){ const t = EL.reduce((s,e)=>s+e.w,0); let r = Math.random()*t;
+        for (const e of EL){ r -= e.w; if (r <= 0) return e; } return EL[0]; }
+      function build(){
+        W = doc.body.clientWidth; H = win.innerHeight;
+        c.width = W*dpr; c.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+        atoms = Array.from({length: N}, () => { const e = pick();
+          return {x:Math.random()*W, y:Math.random()*H,
+                  vx:(Math.random()-0.5)*SPEED, vy:(Math.random()-0.5)*SPEED, e}; });
       }
-      function frame() {
+      function frame(){
         ctx.clearRect(0, 0, W, H);
-        for (const p of pts) {
-          if (!reduce) { p.x += p.vx; p.y += p.vy; }
-          if (p.x < 0 || p.x > W) p.vx *= -1;
-          if (p.y < 0 || p.y > H) p.vy *= -1;
-        }
-        for (let i = 0; i < N; i++) for (let j = i+1; j < N; j++) {
-          const a = pts[i], b = pts[j];
-          const d = Math.hypot(a.x-b.x, a.y-b.y);
-          if (d < LINK) {
-            ctx.strokeStyle = 'rgba(109,94,252,' + (1 - d/LINK)*0.38 + ')';
+        // valence-limited bonds: each atom bonds to its nearest `val` neighbours
+        const seen = new Set();
+        for (let i = 0; i < atoms.length; i++) {
+          const a = atoms[i], near = [];
+          for (let j = 0; j < atoms.length; j++) { if (i === j) continue;
+            const b = atoms[j], d = Math.hypot(a.x-b.x, a.y-b.y);
+            if (d < LINK) near.push({j, d, b}); }
+          near.sort((p,q) => p.d - q.d);
+          near.slice(0, a.e.val).forEach(({j, d, b}, k) => {
+            const key = i < j ? i+':'+j : j+':'+i; if (seen.has(key)) return; seen.add(key);
+            const fade = (1 - d/LINK) * 0.34;
+            ctx.strokeStyle = 'rgba('+ACC[0]+','+ACC[1]+','+ACC[2]+','+fade.toFixed(3)+')';
             ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-          }
+            const dbl = k === 0 && (a.e.s === 'O' || b.e.s === 'O') && d < LINK*0.55;
+            if (dbl) {                                  // draw a double bond
+              const ux = -(b.y-a.y)/d, uy = (b.x-a.x)/d, o = 1.9;
+              ctx.beginPath(); ctx.moveTo(a.x+ux*o, a.y+uy*o); ctx.lineTo(b.x+ux*o, b.y+uy*o); ctx.stroke();
+              ctx.beginPath(); ctx.moveTo(a.x-ux*o, a.y-uy*o); ctx.lineTo(b.x-ux*o, b.y-uy*o); ctx.stroke();
+            } else {
+              ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+            }
+          });
         }
-        for (const p of pts) {
-          ctx.fillStyle = 'rgba(74,86,205,0.85)';
-          ctx.beginPath(); ctx.arc(p.x, p.y, 1.7, 0, 7); ctx.fill();
+        // atoms: element-tinted dot with a soft halo
+        for (const p of atoms) {
+          if (!reduce) { p.x += p.vx; p.y += p.vy;
+            if (p.x < 0 || p.x > W) p.vx *= -1; if (p.y < 0 || p.y > H) p.vy *= -1; }
+          const [r,g,bl] = p.e.c, rad = p.e.r + 0.4;
+          const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rad*3.4);
+          grd.addColorStop(0, 'rgba('+r+','+g+','+bl+',0.5)');
+          grd.addColorStop(1, 'rgba('+r+','+g+','+bl+',0)');
+          ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(p.x, p.y, rad*3.4, 0, 7); ctx.fill();
+          ctx.fillStyle = 'rgba('+r+','+g+','+bl+',0.92)';
+          ctx.beginPath(); ctx.arc(p.x, p.y, rad, 0, 7); ctx.fill();
         }
-        if (!reduce) requestAnimationFrame(frame);
+        if (!reduce) win.requestAnimationFrame(frame);
       }
-      window.parent.addEventListener('resize', reset);
-      reset(); frame();
+      win.addEventListener('resize', build);
+      build(); frame();
     })();
     </script>
     """,
