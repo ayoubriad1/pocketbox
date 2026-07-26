@@ -9,6 +9,7 @@ import tempfile
 import textwrap
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from pocketbox.box import compute_box, write_vina_config
 from pocketbox.match import rank_pockets
@@ -34,6 +35,11 @@ def _smiles_3d(smiles: str) -> str:
 @st.cache_data(show_spinner=False)
 def _structure_3d(text: str, fmt: str):
     return structure_to_molblock_and_desc(text, fmt)
+
+
+def _show3d(view, height: int) -> None:
+    """Embed a py3Dmol view directly via Streamlit components (no stmol dep)."""
+    components.html(view._make_html(), height=height + 20, scrolling=False)
 
 # --------------------------------------------------------------------------- #
 # Look & feel
@@ -135,8 +141,8 @@ with st.sidebar:
     st.divider()
     st.caption(
         "Detection uses **fpocket** or **P2Rank** (must be installed & on "
-        "PATH). Ligand descriptors use **RDKit**. Viewer uses **py3Dmol / "
-        "stmol**.")
+        "PATH). Ligand descriptors use **RDKit**. 3D views use **py3Dmol / "
+        "3Dmol.js**.")
 
 # --------------------------------------------------------------------------- #
 # Inputs
@@ -204,10 +210,9 @@ if lig_text:
                     unsafe_allow_html=True)
         st.caption("Ball-and-stick · drag to rotate · scroll to zoom")
         try:
-            from stmol import showmol
             from pocketbox.visualize import build_ligand_view
-            showmol(build_ligand_view(lig_text, fmt=lig_fmt, width=1080,
-                                      height=340), height=350, width=1080)
+            _show3d(build_ligand_view(lig_text, fmt=lig_fmt, width=1080,
+                                      height=340), height=340)
         except Exception as e:
             st.info(f"Ligand viewer unavailable ({e}).")
 
@@ -394,17 +399,16 @@ if "ranked" in st.session_state:
     t_cart, t_surf, t_cfg = st.tabs(
         ["Cartoon view", "Surface view", "Vina config"])
     try:
-        from stmol import showmol
         from pocketbox.visualize import build_view, build_surface_view
         with t_cart:
             st.caption("Cartoon · pocket cavity (orange) · box (magenta)")
-            showmol(build_view(pdb_text, box=box, pocket_atom_coords=pocket_pts),
-                    height=480, width=760)
+            _show3d(build_view(pdb_text, box=box, pocket_atom_coords=pocket_pts,
+                               width=820, height=480), height=480)
         with t_surf:
             st.caption("Translucent surface · reveals the cavity · box at pocket")
-            showmol(build_surface_view(pdb_text, box=box,
-                                       pocket_atom_coords=pocket_pts),
-                    height=480, width=760)
+            _show3d(build_surface_view(pdb_text, box=box,
+                                       pocket_atom_coords=pocket_pts,
+                                       width=820, height=480), height=480)
     except Exception as e:
         with t_cart:
             st.info(f"3D viewer unavailable ({e}). Box params are in the "
