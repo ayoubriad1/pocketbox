@@ -16,7 +16,7 @@ _BOX_GREEN = 0x2fbf5f    # the two walls perpendicular to Y
 _BOX_BLUE = 0x2f7bff     # the two walls perpendicular to Z
 
 
-def add_axis_colored_box(view, box: Box, opacity: float = 0.85,
+def add_axis_colored_box(view, box: Box, opacity: float = 1.0,
                          thickness: float = 0.4, outline: bool = True) -> None:
     """Draw `box` as six translucent walls coloured by dimension (X/Y/Z ->
     red/green/blue), plus a thin outline to define the edges. Drawn in the
