@@ -10,7 +10,12 @@ RUN micromamba install -y -n base -f /app/environment.yml && \
 COPY --chown=$MAMBA_USER:$MAMBA_USER . /app
 
 EXPOSE 8501
-# HF Spaces sets $PORT; default to 8501 locally.
 ENV PORT=8501
 ENTRYPOINT ["/usr/local/bin/_entrypoint.sh"]
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Headless + CORS/XSRF off so the app embeds cleanly in the Spaces iframe.
+CMD streamlit run app.py \
+      --server.port=${PORT} \
+      --server.address=0.0.0.0 \
+      --server.headless=true \
+      --server.enableCORS=false \
+      --server.enableXsrfProtection=false
