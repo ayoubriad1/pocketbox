@@ -394,14 +394,17 @@ if "ranked" in st.session_state:
     cfg = write_vina_config(box, exhaustiveness=exhaust)
 
     st.markdown(
-        f"The magenta grid box is locked to pocket **{pocket.id}** — rotate a "
-        "view and it stays on the active site.")
+        f"The docking box is locked to pocket **{pocket.id}** — rotate a view "
+        "and it stays on the active site. Its walls are coloured by dimension: "
+        "**X red · Y green · Z blue** (opposite walls share a colour), and kept "
+        "translucent so the protein shows through.")
     t_cart, t_surf, t_cfg = st.tabs(
         ["Cartoon view", "Surface view", "Vina config"])
     try:
         from pocketbox.visualize import build_view, build_surface_view
         with t_cart:
-            st.caption("Cartoon · pocket cavity (orange) · box (magenta)")
+            st.caption("Cartoon · pocket cavity (orange) · box walls X/Y/Z = "
+                       "red/green/blue")
             _show3d(build_view(pdb_text, box=box, pocket_atom_coords=pocket_pts,
                                width=820, height=480), height=480)
         with t_surf:

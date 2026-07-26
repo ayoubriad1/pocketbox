@@ -1,11 +1,50 @@
-"""3D visualization with py3Dmol: cartoon + highlighted pocket + wireframe box.
+"""3D visualization with py3Dmol: cartoon + highlighted pocket + docking box.
 
-Returns a py3Dmol view object. In Streamlit, render it with stmol.showmol(view).
-Outside Streamlit you can call view.show() in a notebook, or view._make_html().
+Returns a py3Dmol view object. In Streamlit, render it via
+`streamlit.components.v1.html(view._make_html(), ...)`. Outside Streamlit you can
+call view.show() in a notebook, or view._make_html().
 """
 
 from __future__ import annotations
 from .box import Box
+
+# Axis-colored, semi-transparent docking box. Opposite walls share a colour, so
+# each of the three box dimensions reads as X = red, Y = green, Z = blue. Low
+# opacity keeps the protein visible *through* the box while the walls still show.
+_BOX_RED = 0xff4d4f      # the two walls perpendicular to X
+_BOX_GREEN = 0x2fbf5f    # the two walls perpendicular to Y
+_BOX_BLUE = 0x2f7bff     # the two walls perpendicular to Z
+
+
+def add_axis_colored_box(view, box: Box, opacity: float = 0.22,
+                         thickness: float = 0.12, outline: bool = True) -> None:
+    """Draw `box` as six translucent walls coloured by dimension (X/Y/Z ->
+    red/green/blue), plus a thin outline to define the edges. Drawn in the
+    model's coordinate frame, so it stays locked to the pocket on rotate/zoom."""
+    cx, cy, cz = box.center
+    sx, sy, sz = box.size
+    t = thickness
+    walls = (
+        ((cx - sx / 2, cy, cz), (t, sy, sz), _BOX_RED),
+        ((cx + sx / 2, cy, cz), (t, sy, sz), _BOX_RED),
+        ((cx, cy - sy / 2, cz), (sx, t, sz), _BOX_GREEN),
+        ((cx, cy + sy / 2, cz), (sx, t, sz), _BOX_GREEN),
+        ((cx, cy, cz - sz / 2), (sx, sy, t), _BOX_BLUE),
+        ((cx, cy, cz + sz / 2), (sx, sy, t), _BOX_BLUE),
+    )
+    for (wc, wd, col) in walls:
+        view.addBox({
+            "center": {"x": wc[0], "y": wc[1], "z": wc[2]},
+            "dimensions": {"w": wd[0], "h": wd[1], "d": wd[2]},
+            "color": col, "opacity": opacity, "wireframe": False,
+        })
+    if outline:
+        view.addBox({
+            "center": {"x": cx, "y": cy, "z": cz},
+            "dimensions": {"w": sx, "h": sy, "d": sz},
+            "color": 0x2a2a2a, "opacity": 0.5, "wireframe": True,
+            "linewidth": 1.5,
+        })
 
 
 def build_view(pdb_text: str,
@@ -42,16 +81,7 @@ def build_view(pdb_text: str,
                             "radius": 0.4, "color": "orange", "opacity": 0.35})
 
     if box is not None:
-        cx, cy, cz = box.center
-        sx, sy, sz = box.size
-        view.addBox({
-            "center": {"x": cx, "y": cy, "z": cz},
-            "dimensions": {"w": sx, "h": sy, "d": sz},
-            "color": "magenta",
-            "opacity": 0.9,
-            "wireframe": True,
-            "linewidth": 2.0,
-        })
+        add_axis_colored_box(view, box)
 
     view.zoomTo()
     return view
@@ -125,16 +155,7 @@ def build_surface_view(pdb_text: str,
                             "radius": 1.2, "color": "orange", "opacity": 0.9})
 
     if box is not None:
-        cx, cy, cz = box.center
-        sx, sy, sz = box.size
-        view.addBox({
-            "center": {"x": cx, "y": cy, "z": cz},
-            "dimensions": {"w": sx, "h": sy, "d": sz},
-            "color": "magenta",
-            "opacity": 0.95,
-            "wireframe": True,
-            "linewidth": 2.5,
-        })
+        add_axis_colored_box(view, box)
 
     view.zoomTo()
     return view
