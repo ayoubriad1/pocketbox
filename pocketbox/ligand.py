@@ -125,6 +125,83 @@ def compute_ligand_descriptors(smiles: str) -> dict:
     }
 
 
+def _mol_descriptors(mol, smiles: str | None = None) -> dict:
+    """Shared descriptor core for an RDKit mol (from SMILES or a structure file)."""
+    from rdkit import Chem
+    from rdkit.Chem import Descriptors, Crippen, rdMolDescriptors
+
+    metals = {"Zn", "Mg", "Mn", "Fe", "Ca", "Cu", "Ni", "Co",
+              "Pt", "Ru", "Au", "Na", "K"}
+    has_metal = any(a.GetSymbol() in metals for a in mol.GetAtoms())
+    return {
+        "smiles": smiles or Chem.MolToSmiles(Chem.RemoveHs(mol)),
+        "mol_weight": round(Descriptors.MolWt(mol), 2),
+        "logp": round(Crippen.MolLogP(mol), 2),
+        "h_bond_donors": rdMolDescriptors.CalcNumHBD(mol),
+        "h_bond_acceptors": rdMolDescriptors.CalcNumHBA(mol),
+        "rotatable_bonds": rdMolDescriptors.CalcNumRotatableBonds(mol),
+        "aromatic_rings": rdMolDescriptors.CalcNumAromaticRings(mol),
+        "tpsa": round(rdMolDescriptors.CalcTPSA(mol), 2),
+        "formal_charge": Chem.GetFormalCharge(mol),
+        "has_metal": has_metal,
+    }
+
+
+def smiles_to_molblock(smiles: str) -> str:
+    """Embed a SMILES into a 3D conformer and return an MDL mol block (for 3D view)."""
+    try:
+        from rdkit import Chem
+        from rdkit.Chem import AllChem
+    except ImportError as e:                                    # pragma: no cover
+        raise ImportError("RDKit is required to build a 3D ligand.") from e
+
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        raise ValueError(f"Could not parse SMILES: {smiles!r}")
+    mol = Chem.AddHs(mol)
+    params = AllChem.ETKDGv3()
+    params.randomSeed = 0xf00d
+    if AllChem.EmbedMolecule(mol, params) != 0:                 # embedding failed
+        AllChem.EmbedMolecule(mol, useRandomCoords=True)
+    try:
+        AllChem.MMFFOptimizeMolecule(mol)
+    except Exception:                                          # pragma: no cover
+        pass
+    return Chem.MolToMolBlock(mol)
+
+
+def structure_to_molblock_and_desc(text: str, fmt: str) -> tuple[str, dict]:
+    """Parse an uploaded ligand structure (mol/sdf/pdb) -> (3D mol block, descriptors).
+
+    If the file has no 3D coordinates, a conformer is generated so it can still
+    be shown in 3D and described.
+    """
+    try:
+        from rdkit import Chem
+        from rdkit.Chem import AllChem
+    except ImportError as e:                                    # pragma: no cover
+        raise ImportError("RDKit is required to read a ligand structure.") from e
+
+    fmt = fmt.lower().lstrip(".")
+    if fmt in ("mol", "sdf"):
+        mol = Chem.MolFromMolBlock(text, removeHs=False)
+    elif fmt == "pdb":
+        mol = Chem.MolFromPDBBlock(text, removeHs=False)
+    else:
+        raise ValueError(f"Unsupported ligand format '.{fmt}' (use mol/sdf/pdb).")
+    if mol is None:
+        raise ValueError("Could not parse the ligand structure file.")
+
+    if mol.GetNumConformers() == 0:
+        mol = Chem.AddHs(mol)
+        AllChem.EmbedMolecule(mol, AllChem.ETKDGv3())
+        try:
+            AllChem.MMFFOptimizeMolecule(mol)
+        except Exception:                                     # pragma: no cover
+            pass
+    return Chem.MolToMolBlock(mol), _mol_descriptors(mol)
+
+
 def profile_from_descriptors(desc: dict) -> LigandProfile:
     """Heuristically derive a LigandProfile from RDKit descriptors, so a user
     can paste a SMILES instead of picking a class."""

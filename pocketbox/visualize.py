@@ -57,6 +57,36 @@ def build_view(pdb_text: str,
     return view
 
 
+def build_ligand_view(mol_text: str,
+                      fmt: str = "mol",
+                      width: int = 760,
+                      height: int = 360,
+                      style: str = "ball_and_stick"):
+    """Render a small molecule (SMILES-derived mol block or an uploaded
+    mol/sdf/pdb) as an interactive, rotatable 3D model.
+
+    mol_text : the molecule as text (MDL mol block or PDB).
+    fmt      : 3Dmol model format ("mol", "sdf", "pdb").
+    style    : "ball_and_stick" or "stick".
+    """
+    try:
+        import py3Dmol
+    except ImportError as e:                                    # pragma: no cover
+        raise ImportError(
+            "py3Dmol is required for the ligand viewer (`pip install py3Dmol`).") from e
+
+    view = py3Dmol.view(width=width, height=height)
+    view.addModel(mol_text, fmt)
+    if style == "stick":
+        view.setStyle({"stick": {"radius": 0.14}})
+    else:
+        view.setStyle({"stick": {"radius": 0.14},
+                       "sphere": {"scale": 0.26}})
+    view.setBackgroundColor("white")
+    view.zoomTo()
+    return view
+
+
 def build_surface_view(pdb_text: str,
                        box: Box | None = None,
                        pocket_atom_coords=None,
