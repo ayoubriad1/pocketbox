@@ -97,11 +97,17 @@ _html(
       body { background:
         radial-gradient(1100px 640px at 12% -8%, #eef0ff 0%,
                         #f6f7ff 45%, #ffffff 82%) fixed; }
-      /* keep input/result cards opaque so text stays crisp over the canvas */
-      [data-testid="stVerticalBlockBorderWrapper"] {
-        background: rgba(255,255,255,0.82);
-        backdrop-filter: blur(3px); border-radius: 16px;
+      /* solid white cards so the moving molecules never sit behind the text */
+      [class*="st-key-pbcard"] {
+        background: #ffffff !important;
+        border: 1px solid #e7e5f2 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 6px 22px rgba(30,26,60,0.07) !important;
+        padding: 14px 16px !important;
       }
+      /* the ranked-pocket table also gets a solid backing */
+      [data-testid="stDataFrame"] { background:#ffffff !important;
+        border-radius: 12px; }
     </style>
     """
 )
@@ -214,7 +220,7 @@ with st.sidebar:
 c1, c2 = st.columns(2)
 
 with c1:
-    with st.container(border=True):
+    with st.container(border=True, key="pbcard-structure"):
         st.markdown('<div class="pb-sec">1 · Structure</div>',
                     unsafe_allow_html=True)
         src = st.radio("Source", ["PDB ID", "Upload .pdb"], horizontal=True)
@@ -227,7 +233,7 @@ with c1:
             uploaded = st.file_uploader("PDB file", type=["pdb"])
 
 with c2:
-    with st.container(border=True):
+    with st.container(border=True, key="pbcard-ligand"):
         st.markdown('<div class="pb-sec">2 · Ligand</div>',
                     unsafe_allow_html=True)
         mode = st.radio("Define ligand by", ["Class", "SMILES", "Structure file"],
@@ -269,7 +275,7 @@ with c2:
 
 # Ligand 3D preview (SMILES-derived or uploaded) — rotatable / zoomable.
 if lig_text:
-    with st.container(border=True):
+    with st.container(border=True, key="pbcard-lig3d"):
         st.markdown('<div class="pb-sec">Ligand in 3D</div>',
                     unsafe_allow_html=True)
         st.caption("Ball-and-stick · drag to rotate · scroll to zoom")
@@ -280,7 +286,7 @@ if lig_text:
         except Exception as e:
             st.info(f"Ligand viewer unavailable ({e}).")
 
-with st.container(border=True):
+with st.container(border=True, key="pbcard-detector"):
     st.markdown('<div class="pb-sec">3 · Detector &amp; box settings</div>',
                 unsafe_allow_html=True)
 
@@ -439,7 +445,7 @@ if "ranked" in st.session_state:
     st.markdown(f"{_badge(sel + 1)} &nbsp; **Pocket {pocket.id}**",
                 unsafe_allow_html=True)
 
-    with st.container(border=True):
+    with st.container(border=True, key="pbcard-detail"):
         m1, m2, m3 = st.columns(3)
         m1.metric("Match score", f"{chosen['score'].total:.3f}")
         m2.metric("Druggability",
