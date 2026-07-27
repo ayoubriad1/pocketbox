@@ -214,44 +214,129 @@ _LOGO = (
     'stroke-width="2" stroke-dasharray="4 5" opacity="0.8"/></svg>'
 )
 
-_html(
-    f"""
-    <div class="pb-hero">
-      {_LOGO}
-      <div>
-        <h1>PocketBox</h1>
-        <p>Ligand-aware binding-pocket triage &amp; AutoDock&nbsp;Vina docking-box export</p>
-      </div>
-    </div>
-    <div class="pb-flow">
-      <span class="pb-step">Structure</span><span class="pb-arrow">&rsaquo;</span>
-      <span class="pb-step">Detect pockets</span><span class="pb-arrow">&rsaquo;</span>
-      <span class="pb-step">Describe</span><span class="pb-arrow">&rsaquo;</span>
-      <span class="pb-step">Rank vs ligand</span><span class="pb-arrow">&rsaquo;</span>
-      <span class="pb-step">Vina box</span><span class="pb-arrow">&rsaquo;</span>
-      <span class="pb-step">Export</span>
-    </div>
-    """
-)
+# --------------------------------------------------------------------------- #
+# Secondary pages (Gallery / About / Docs)
+# --------------------------------------------------------------------------- #
+_EXAMPLES = [
+    ("2V5Z", "MAO-B", "Monoamine oxidase B — the running example; FAD-adjacent "
+                      "inhibitor site."),
+    ("2Z5X", "MAO-A", "Monoamine oxidase A; substrate / inhibitor cavity."),
+    ("3EML", "Adenosine A2A", "A2A GPCR; orthosteric antagonist pocket."),
+    ("3PBL", "Dopamine D3", "D3 receptor; orthosteric site."),
+    ("2VT4", "β1-adrenergic", "β1 receptor; antagonist pocket."),
+    ("2BYB", "MAO-B", "A second MAO-B crystal form for cross-checking."),
+]
+
+
+def _render_gallery() -> None:
+    st.markdown("### Worked examples")
+    st.caption("Structures with well-characterised binding sites, relevant to "
+               "Parkinson's-disease targets. Copy a PDB ID into the Analyze "
+               "page and run PocketBox on it.")
+    cols = st.columns(3)
+    for i, (pdb, name, note) in enumerate(_EXAMPLES):
+        with cols[i % 3]:
+            with st.container(border=True, key=f"pbcard-gal{i}"):
+                st.markdown(f"**`{pdb}`** · {name}")
+                st.caption(note)
+
+
+def _render_about() -> None:
+    st.markdown("### About & credits")
+    st.markdown(
+        "PocketBox wraps established detectors — **fpocket** and **P2Rank** — "
+        "behind one page, adds a druggability-aware ranking, and emits the "
+        "AutoDock Vina grid box most people end up computing by hand. "
+        "Everything runs on open tools; nothing is sent to a third-party "
+        "service.")
+    st.markdown("**Built on**")
+    tools = [
+        ("fpocket / P2Rank", "Pocket detection (geometry + machine learning)."),
+        ("RDKit", "Ligand parsing, descriptors, and 3D embedding."),
+        ("AutoDock Vina", "The docking engine the exported box targets."),
+        ("py3Dmol / 3Dmol.js", "In-browser 3D structure and box rendering."),
+    ]
+    cols = st.columns(2)
+    for i, (n, w) in enumerate(tools):
+        with cols[i % 2]:
+            with st.container(border=True, key=f"pbcard-cred{i}"):
+                st.markdown(f"**{n}**")
+                st.caption(w)
+    st.caption("Built by Ayoub Riad · Research use only — predictions are "
+               "computational hypotheses, not clinical or diagnostic guidance.")
+
+
+def _render_docs() -> None:
+    st.markdown("### How the pipeline works")
+    steps = [
+        ("Fetch / read structure",
+         "Download by PDB ID from RCSB, or read an uploaded .pdb file."),
+        ("Detect pockets",
+         "fpocket (geometry) or P2Rank (ML) enumerate candidate cavities."),
+        ("Describe",
+         "Per-pocket hydrophobicity, net charge, metals, volume, lining residues."),
+        ("Rank vs ligand",
+         "Blend druggability with ligand compatibility into a transparent score."),
+        ("Compute Vina box",
+         "Centre + size from the pocket's alpha-sphere extent, plus a buffer."),
+        ("Export",
+         "A ready-to-run Vina config; re-dock a known ligand to validate it."),
+    ]
+    for i, (title, body) in enumerate(steps, 1):
+        with st.container(border=True, key=f"pbcard-doc{i}"):
+            st.markdown(f"**{i} · {title}**")
+            st.caption(body)
+    st.markdown("**Command line**")
+    st.code("python cli.py --pdb-id 2V5Z --ligand-class maob_inhibitor "
+            "--backend p2rank --top 5", language="bash")
+
+
+def render_secondary_page(name: str) -> None:
+    {"Gallery": _render_gallery, "About": _render_about,
+     "Docs": _render_docs}.get(name, _render_gallery)()
+
 
 # --------------------------------------------------------------------------- #
-# Sidebar: honest framing
+# Sidebar: navigation + honest framing
 # --------------------------------------------------------------------------- #
 with st.sidebar:
-    st.markdown("### About")
-    st.markdown(
-        "**PocketBox** detects pockets on a protein, ranks them for "
-        "*compatibility* with your ligand class, and exports a ready-to-run "
-        "AutoDock Vina docking box.")
-    st.warning(
-        "The ranking is a **shortlisting heuristic**, not a predictor of the "
-        "true binding site. Confirm candidates by docking, and re-dock a known "
-        "ligand to validate box placement when a co-crystallised one exists.")
+    page = st.radio("Section", ["Analyze", "Gallery", "About", "Docs"],
+                    label_visibility="collapsed")
     st.divider()
-    st.caption(
-        "Detection uses **fpocket** or **P2Rank** (must be installed & on "
-        "PATH). Ligand descriptors use **RDKit**. 3D views use **py3Dmol / "
-        "3Dmol.js**.")
+    st.markdown("**About**")
+    st.caption("PocketBox detects candidate ligand-binding pockets, ranks them "
+               "by druggability, and emits a ready-to-run docking box.")
+    st.warning("Ranking is a **shortlisting heuristic**, not a predictor of the "
+               "true binding site. Confirm by docking; re-dock a known ligand "
+               "to validate the box when a co-crystallised one exists.")
+    st.caption("fpocket · P2Rank · RDKit · py3Dmol / 3Dmol.js")
+
+# Analyze hero — only on the Analyze page.
+if page == "Analyze":
+    _html(
+        f"""
+        <div class="pb-hero">
+          {_LOGO}
+          <div>
+            <h1>PocketBox</h1>
+            <p>Ligand-aware binding-pocket triage &amp; AutoDock&nbsp;Vina docking-box export</p>
+          </div>
+        </div>
+        <div class="pb-flow">
+          <span class="pb-step">Structure</span><span class="pb-arrow">&rsaquo;</span>
+          <span class="pb-step">Detect pockets</span><span class="pb-arrow">&rsaquo;</span>
+          <span class="pb-step">Describe</span><span class="pb-arrow">&rsaquo;</span>
+          <span class="pb-step">Rank vs ligand</span><span class="pb-arrow">&rsaquo;</span>
+          <span class="pb-step">Vina box</span><span class="pb-arrow">&rsaquo;</span>
+          <span class="pb-step">Export</span>
+        </div>
+        """
+    )
+
+# Gallery / About / Docs render here, then stop before the Analyze tool UI.
+if page != "Analyze":
+    render_secondary_page(page)
+    st.stop()
 
 # --------------------------------------------------------------------------- #
 # Inputs
