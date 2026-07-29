@@ -49,10 +49,19 @@ def _html(markup: str) -> None:
     st.markdown(textwrap.dedent(markup).strip(), unsafe_allow_html=True)
 
 
+def _signature() -> None:
+    """Centered, hand-signed author credit shown at the foot of every page."""
+    _html(
+        '<div class="pb-sign">'
+        '<div class="pb-sign-name">Made by Ayoub Riad</div>'
+        '<div class="pb-sign-role">Researcher in Bioinformatics</div>'
+        '</div>')
+
+
 _html(
     """
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Great+Vibes&display=swap');
       html, body, .stApp, [data-testid="stAppViewContainer"], [class*="css"] {
         font-family: 'IBM Plex Sans', system-ui, sans-serif;
       }
@@ -101,6 +110,13 @@ _html(
       .pb-b1 { background:#f0a500; } .pb-b2 { background:#9aa0ad; }
       .pb-b3 { background:#c07b3a; } .pb-bn { background:#c7c4dd; color:#37344a; }
       .pb-foot { color:#8b88a6; font-size:0.85rem; margin-top:8px; }
+      /* classy hand-signed credit */
+      .pb-sign { text-align:center; margin:44px 0 16px; }
+      .pb-sign-name { font-family:'Great Vibes','Parisienne',cursive;
+        font-style:italic; font-size:3rem; line-height:1.15; color:#6d5efc; }
+      .pb-sign-role { font-family:'IBM Plex Mono',monospace; font-size:0.78rem;
+        letter-spacing:0.16em; text-transform:uppercase; color:#6b6a80;
+        margin-top:2px; }
       /* clear theme: make surfaces transparent so the molecular canvas shows */
       .stApp { background: transparent !important; }
       [data-testid="stHeader"] { background: transparent !important; }
@@ -336,6 +352,7 @@ if page == "Analyze":
 # Gallery / About / Docs render here, then stop before the Analyze tool UI.
 if page != "Analyze":
     render_secondary_page(page)
+    _signature()
     st.stop()
 
 # --------------------------------------------------------------------------- #
@@ -634,3 +651,5 @@ else:
         '<div class="pb-foot">Set a structure and a ligand above, then '
         '<b>Detect pockets &amp; rank</b> to see ranked pockets, 3D views, and '
         'the exportable Vina box.</div>', unsafe_allow_html=True)
+
+_signature()
